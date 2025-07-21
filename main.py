@@ -5,32 +5,32 @@ from uuid import uuid4, UUID
 app = FastAPI()
 
 #dummy in memory db
-fake_items_db = [ ]
+movies_db = [ ]
 
 
 @app.get("/")
 def home():
-    return {"message": "Welcome to the Items API!"}
+    return {"message": "Welcome to the Movies API!"}
 
-@app.get("/items") 
-def get_items(offset: int = 0, limit: int = 10):
-    return fake_items_db[offset: limit]
+@app.get("/movies") 
+def get_movies(offset: int = 0, limit: int = 10):
+    return movies_db[offset: limit]
 
-@app.post("/send-item")
-def send_item(items=Body()):
-    if "item_name" not in items:
-        return {"message": "Invalid item name. Please try again loser", "status": "fail"}
-    return fake_items_db.append({"id": str(uuid4()), "item_name": items['item_name']})
+@app.post("/send-movie")
+def send_movie(movies=Body()):
+    if "movie_name" not in movies:
+        return {"message": "Invalid movie name. Please try again loser", "status": "fail"}
+    return movies_db.append({"id": str(uuid4()), "movie_name": movies['movie_name']})
 
-@app.put('/update-item')
-def update_item(items=Body()):
-    for i in range(len(fake_items_db)):
-        if items['id'] == fake_items_db[i]['id']:
-            fake_items_db[i] = items 
+@app.put('/update-movie')
+def update_movie(movies=Body()):
+    for i in range(len(movies_db)):
+        if movies['id'] == movies_db[i]['id']:
+            movies_db[i] = movies 
             return {
                 "status": "success",
-                "message": f"updated '{items["id"]}' id successfully!",
-                "data": fake_items_db
+                "message": f"updated '{movies["id"]}' id successfully!",
+                "data": movies_db
             }
     return {
         "status": "fail",
@@ -38,16 +38,16 @@ def update_item(items=Body()):
     }
 
     
-@app.delete('/delete-item/{item_id}')
-def delete_item(item_id):
-    for i in range(len(fake_items_db)):
-        if item_id[i] in fake_items_db[i]["id"]:
-            # fake_items_db.remove(item_id)
-            fake_items_db.remove(fake_items_db[i])
+@app.delete('/delete-movie/{movie_id}')
+def delete_movie(movie_id):
+    for i in range(len(movies_db)):
+        if movie_id[i] in movies_db[i]["id"]:
+            # movies_db.remove(movie_id)
+            movies_db.remove(movies_db[i])
             return {
                 "status": "success",
-                "message": f"deleted '{item_id}' id successfully!",
-                "data": fake_items_db
+                "message": f"deleted '{movie_id}' id successfully!",
+                "data": movies_db
             }
     return {
         "status": "fail",
@@ -55,13 +55,13 @@ def delete_item(item_id):
     }
 
 @app.delete("/delete-all")
-def delete_all_items(user: str = "guest"):
+def delete_all_movies(user: str = "guest"):
     if user == "admin":
-        fake_items_db.clear() 
+        movies_db.clear() 
         return {
             "status": "success", 
             "message": "in memory db cleared successfully!",
-            "data": fake_items_db
+            "data": movies_db
         }
     else:
         return {
