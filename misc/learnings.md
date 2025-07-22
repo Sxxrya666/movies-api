@@ -173,5 +173,79 @@ KeyError: 'item_name'
 > **🧠 Hint Level:**  
 If you’re not gonna use `get()`, at least check `if "item_name" in items`. Because right now, your validation logic is like building a bridge and hoping the river doesn’t move.
 
+---
+# ERROR: 7
+
+## 📥 Input Code
+```python
+❯ uv add icecream
+```
+
+## 📤 Error Output
+```python
+warning: `VIRTUAL_ENV=/mnt/e/e-drive/coding/newnew/py/fastAPI/books-api/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+```
+
+## ✅ Solution
+```diff
+
+```
+
+---
+# ERROR: 8
+
+## 📥 Input Code
+```python
+if __name__ == "__main__":
+    uvicorn.run(
+        app,
+        "__main__:app", 
+        host="0.0.0.0",
+        port=22000, 
+        log_level="info",
+        reload=True,
+    )   
+```
+
+## 📤 Error Output
+```python
+error
+```
+
+## ✅ Solution
+```diff
+if __name__ == "__main__":
+    uvicorn.run(
+-       app,
++       "__main__:app", 
+        host="0.0.0.0",
+        port=22000, 
+        log_level="info",
+        reload=True,
+    )
+```
+
+## 🔗 Resources
+- https://github.com/fastapi/fastapi/discussions/7449
 
 
+---
+# ERROR: 9
+
+## 📥 Input Code
+```python
+
+```
+
+## 📤 Error Output
+```python
+  File "/mnt/e/e-drive/coding/newnew/py/fastAPI/items-app/main.py", line 32, in MovieRequest
+    name: str | None = Field(
+                       ^^^^^
+NameError: name 'Field' is not defined
+```
+
+## ✅ Solution
+```diff
+You never imported it dummy!
+```
