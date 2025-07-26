@@ -9,7 +9,10 @@
 - same bs that make the url dynamic like url params in express 
 - syntax: app.get("/some-route/{some_var}")
     - use {variable_name} for dynamic shit
-
+### path validation using `Path()` from fastapi
+- use Path(min_val,max_val, ...) and other shit to validate what's within the url path: 
+for eg: `localhost:3880/movies/{movies_id}
+enforce those shit for url to behave strictly when taking url params
 ## query params
 - When you declare other function parameters that are not part of the path parameters, they are automatically interpreted as "query" parameters.
 - your typical `url.com?key=value` syntax
@@ -80,3 +83,25 @@ Because `**movies` tries to unpack a model, which is not a dict.
             gt=, 
             lt=
         )
+
+## model config
+- why use this? 
+> it will help pre-populate the json for request to server
+- use it inside the req class like this : 
+```python
+{
+    "json_schema_extra": {
+        "example": {
+            "field": "value",
+            "field2": "value2"
+            ...
+        }
+    }
+}
+```
+
+ - i can configure swagger docs to behave my way. eg i changed this in the fastapi instance
+```python
+app = FastAPI(swagger_ui_parameters={"tryItOutEnabled": True})
+```
+> why ? becuase it was annoying to click the "try it now" button time and again
