@@ -429,3 +429,288 @@ async def update_movie(movies: MovieRequest):
 ## 📝 Analysis
 **Root Cause:** 
 > ALWAYS FUCKING STRINGIFY THE UUIDS since its return instance will never match to the inMEM DB
+
+
+---
+# ERROR: 15
+
+## 📥 Input Code
+```python
+connect_my_db.execute(text('CREATE TABLE IF NOT EXISTS movie_ratings (id int, name str, description str, cast str, music_director str'))  
+```
+
+## 📤 Error Output
+```python
+❯ python db/db.py
+Traceback (most recent call last):
+  File "/mnt/e/e-drive/coding/newnew/py/fastAPI/items-app/.venv/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1961, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/e/e-drive/coding/newnew/py/fastAPI/items-app/.venv/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 944, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: incomplete input
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/e/e-drive/coding/newnew/py/fastAPI/items-app/db/db.py", line 11, in <module>
+    connect_my_db.execute(text('CREATE TABLE movie_ratings (id uuid, name str, description str, cast str, music_director str, release_year date, created_at datetime, updated_at datetime'))
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/e/e-drive/coding/newnew/py/fastAPI/items-app/.venv/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1413, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "/mnt/e/e-drive/coding/newnew/py/fastAPI/items-app/.venv/lib/python3.13/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/e/e-drive/coding/newnew/py/fastAPI/items-app/.venv/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1635, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "/mnt/e/e-drive/coding/newnew/py/fastAPI/items-app/.venv/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1840, in _execute_context
+    return self._exec_single_context(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/e/e-drive/coding/newnew/py/fastAPI/items-app/.venv/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1980, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/e/e-drive/coding/newnew/py/fastAPI/items-app/.venv/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 2349, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/e/e-drive/coding/newnew/py/fastAPI/items-app/.venv/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1961, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/e/e-drive/coding/newnew/py/fastAPI/items-app/.venv/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 944, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) incomplete input
+[SQL: CREATE TABLE movie_ratings (id uuid, name str, description str, cast str, music_director str, release_year date, created_at datetime, updated_at datetime]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+```
+
+## ✅ Solution
+```diff
+-connect_my_db.execute(text('CREATE TABLE IF NOT EXISTS movie_ratings (id int, name str, description str, cast str, music_director str'))
++connect_my_db.execute(text('CREATE TABLE IF NOT EXISTS movie_ratings (id int, name str, description str, cast str, music_director str)'))
+```
+
+---
+
+# ERROR: 16
+
+## 📥 Input Code
+```python
+from sqlalchemy import Session
+```
+
+## 📤 Error Output
+```python
+Traceback (most recent call last):
+  File "/mnt/e/e-drive/coding/newnew/py/fastAPI/items-app/db/db.py", line 21, in <module>
+    from sqlalchemy import Session
+ImportError: cannot import name 'Session' from 'sqlalchemy' (/mnt/e/e-drive/coding/newnew/py/fastAPI/items-app/.venv/lib/python3.13/site-packages/sqlalchemy/__init__.py)
+```
+
+## ✅ Solution
+```diff
+Traceback (most recent call last):
+-   from sqlalchemy import Session
++   from sqlalchemy.orm import Session
+```
+
+---
+# ERROR: 17
+
+## 📥 Input Code
+```python
+None
+```
+
+## 📤 Error Output
+```python
+sqlalchemy.exc.ProgrammingError: (mysql.connector.errors.ProgrammingError) 1049 (42000): Unknown database 'testing_sqlalchemy_slaves'
+(Background on this error at: https://sqlalche.me/e/20/f405)
+```
+
+## ✅ Solution
+```diff
+create the database manually using mysql cli
+```
+---
+# ERROR: 18
+
+## 📥 Input Code
+```python
+class MovieRating(DeclarativeBase):
+    __tablename__ = 'movie_rating'
+```
+
+## 📤 Error Output
+```python
+sqlalchemy.exc.InvalidRequestError: Cannot use 'DeclarativeBase' directly as a declarative base class. Create a Base by creating a subclass of it.
+```
+
+## ✅ Solution
+```diff
++class Base(DeclarativeBase):
+     pass
+
+-class MovieRating(DeclarativeBase):
++class MovieRating(Base):
+     __tablename__ = 'movie_rating'
+```
+---
+# ERROR: 19
+
+## 📥 Input Code
+```python
+MovieRating.metadata.create_all(bind=engine)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+```
+
+## 📤 Error Output
+```python
+sqlalchemy.exc.ProgrammingError: (mysql.connector.errors.ProgrammingError) 1049 (42000): Unknown database 'SomeDBname'
+(Background on this error at: https://sqlalche.me/e/20/f405)
+```
+
+## ✅ Solution
+```diff
+just create the database using mysql cli /gui 
+```
+
+---
+# ERROR: 20
+
+## 📥 Input Code
+```python
+code
+```
+
+## 📤 Error Output
+```python
+sqlalchemy.exc.CompileError: (in table 'movie_rating', column 'name'): VARCHAR requires a length on dialect mysql
+```
+
+## ✅ Solution
+```diff
+error
+```
+
+
+## 📝 Analysis
+**Root Cause:** 
+i had to give length of string/varchar. eg: string(20)
+
+---
+# ERROR: 21
+
+## 📥 Input Code
+```python
+NA
+```
+
+## 📤 Error Output
+```python
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+```
+
+## ✅ Solution
+```diff
+in url, use `http://localhost...` instead of `https://localhost:`
+```
+
+
+## 🔗 Resources
+- https://stackoverflow.com/questions/70726187/invalid-http-request-received-with-fast-api 
+
+---
+# ERROR: 22
+
+## 📥 Input Code
+```python
+NA
+MYSQL_CONN_URL='mysql+mysqlconnector://root:nigger@localhost/alchemy_bhosadika'
+```
+
+## 📤 Error Output
+```python
+  File "/mnt/e/e-drive/coding/newnew/py/fastAPI/testing-knowledge/.venv/lib/python3.13/site-packages/sqlalchemy/dialects/mysql/mysqldb.py", line 167, in import_dbapi
+    return __import__("MySQLdb")
+ModuleNotFoundError: No module named 'MySQLdb'
+```
+
+## ✅ Solution
+```diff
++MYSQL_CONN_URL='mysql+mysqlconnector://root:nigger@localhost/alchemy_bhosadika'
+-MYSQL_CONN_URL='mysql://root:nigger@localhost/alchemy_bhosadika'
+```
+
+---
+# ERROR: 23
+
+## 📥 Input Code
+```python
+uv add python-dotenv
+```
+
+## 📤 Error Output
+```python
+❯ uv add python-dotenv
+⠹ testing-knowledge==0.1.0                                                                   error: Failed to fetch: `https://pypi.org/simple/uvicorn/`
+  Caused by: Request failed after 3 retries
+  Caused by: error sending request for url (https://pypi.org/simple/uvicorn/)
+  Caused by: operation timed out
+```
+
+## ✅ Solution
+```diff
+LITERALLY TURN OF CLOUDFLARE WARP :LOL:
+```
+
+## 🔗 Resources
+- https://stackoverflow.com/questions/57648998/connection-to-pypi-org-timed-out
+
+---
+# ERROR: 24
+
+## 📥 Input Code
+```python
+    cast = Column(ARRAY(String(20))) 
+```
+
+## 📤 Error Output
+```python
+sqlalchemy.exc.CompileError: (in table 'movie_rating', column 'cast'): Compiler <sqlalchemy.dialects.mysql.base.MySQLTypeCompiler object at 0x7142b7b80590> can't render element of type ARRAY
+```
+
+## ✅ Solution
+```diff
+mysql cant handle arrays. have to use different table
+```

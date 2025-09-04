@@ -4,6 +4,10 @@
 > use => `uv sync` === pip install -r requirements.txt 
 2. use `reload = True in 
 3. for uuid4 in pydantic, just import `UUID4` from pydantic
+4. `type` keyword in python. 
+> example: `type db_dep = Annotated[Session, Depends(get_db)]` 
+> its saying: *"From now on, whenever I write db_dep, what I really mean is that long, ugly thing: Annotated[Session, Depends(get_db)]."*
+
 
 ## path parameters
 - same bs that make the url dynamic like url params in express 
@@ -105,3 +109,52 @@ Because `**movies` tries to unpack a model, which is not a dict.
 app = FastAPI(swagger_ui_parameters={"tryItOutEnabled": True})
 ```
 > why ? becuase it was annoying to click the "try it now" button time and again
+
+
+
+
+# SQLALCHEMY
+
+## Architecture Notes (The "Where") 📂
+-   **Example:**
+    
+    -   `main.py`: This will hold the main FastAPI app and the API routes (`@app.get`, `@app.post`, etc.).
+        
+    -   `database.py`: This is just for the database connection setup (the `engine`, `SessionLocal`, and `Base`).
+        
+    -   `models.py`: This will define the shape of my database tables using SQLAlchemy (e.g., the `User` class).
+        
+    -   `schemas.py`: This will define the shape of my API data using Pydantic (e.g., what a `UserCreate` request should look like).
+
+
+
+
+- for mysql, use dialect called 'mysqlconnector' liek this `mysql+mysqlconnector://...`  to connect engine 
+> format: `mysql+mysqlconnector://username:pass@localhost:[root_optional]/database_name`
+
+- always first engine.connect(), then .execute(<some_sql_query>), then commit()
+- dont write manual sql, instead use alchemy's core: 
+  - import TABLE, METADATA, COLUMN etc (other datatypes such as STRING, INTEGER, FLOAT etc)
+    > for string, you have to give string(<some_length>) just like varchar or else error will come
+  - use constraints such as `primary_key=True/False` , `autoincrement=True`, `nullable=True/false` etc
+  - i can insert multiple objects using list `[{...}, {...}, ...]` using the `insert().values()` method
+
+- use `DeclarativeBase` to define data schema for database
+    - inherit the baseclass to your customclass that you will define schema in: 
+    ```
+    class SomeClass(DeclarativeBase):
+        pass
+    ```
+    - pass this thing called `__tablename__` = 'the table name you want'
+- THEN, when you see Base.metadata.create_all(engine), it simply means:
+> *"Hey, SQLAlchemy! Go look at all the table blueprints (.metadata) I've defined using my Base class, and then build all those tables in the database that this engine is connected to."*
+- to use db in any endpiont, you have to first inject the dependancy (the sessionLocal thing) in the route handler. 
+- then yield it and close it after connection is received. 
+### query a db 
+- `db.query(TableName).all()` is the 'select * from ...'
+- `db.query().filter(do some filtration).all()
+- for post request, first add to session then commit to make change to db. atomicity of TRANSACTION!!
+
+- for put request, get input , check db if the id is same as db.id, then overwrite the db's columns for that id. then add + commit
+- db.add(<you must put the query inside this>)
+- .delete() method: to delete the entire object. 

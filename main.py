@@ -1,47 +1,25 @@
 import uvicorn
 from datetime import datetime
-from typing import List
-from fastapi import FastAPI, Body , Path, Query, HTTPException
-from uuid import uuid4, uuid1
+from typing import List, Annotated
+from fastapi import FastAPI, Body , Path, Query, HTTPException, Depends
 from pydantic import BaseModel, UUID4, Field
-from starlette import status
+from sqlalchemy.orm import Session
+from db.models import MovieRating 
+from db.db import get_db 
 
 
 app = FastAPI(swagger_ui_parameters={"tryItOutEnabled": True})
- 
 
-class Movie:
-    id: UUID4
-    name: str
-    description: str
-    cast: List[str] 
-    music_director: str 
-    rating: float
-    release_year: datetime
-    created_at: str
-    updated_at: str
-
-    def __init__(self, id, name, description, cast, music_director, rating, release_year, created_at, updated_at):
-        self.id = id
-        self.name = name
-        self.description = description
-        self.cast = cast
-        self.music_director = music_director
-        self.rating = rating
-        self.release_year = release_year
-        self.created_at = created_at
-        self.updated_at = updated_at
-
-class MovieRequest(BaseModel):
-    id: UUID4 = Field(uuid4() )
+class MovieRatingRequest(BaseModel):
+    # id: int  
     name: str | None = Field(
         default=None, title="The movie name here"
     )
     description: str = Field(max_length=150)
-    cast: list[str] 
+    cast: str 
     music_director: str = Field(max_length=50)  
     rating: float = Field(
-        gt=0, le=5, description='The rating must lie between 1 to 5!'
+        gt=0, le=10, description='The rating must lie between 1 to 10!'
     )
     release_year: datetime = Field(
         default=datetime.today().year,
@@ -54,10 +32,10 @@ class MovieRequest(BaseModel):
     model_config = {
         "json_schema_extra": {
             "Example Body": {
-                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "id": 420,
                 "name": "Inception",
                 "description": "A mind-bending thriller about dreams within dreams.",
-                "cast": ["Leonardo DiCaprio", "Joseph Gordon-Levitt"],
+                "cast": "Some Guy", 
                 "music_director": "Hans Zimmer",
                 "rating": 4.8,
                 "release_year": "2022",
@@ -67,97 +45,73 @@ class MovieRequest(BaseModel):
         }
     }
     
-
-now = datetime.now().isoformat()
-year = str(datetime.today().year)
-#dummy in memory db
-movies_db = [ 
-        Movie(str(uuid4()), "The Last Horizon", "An epic adventure across time and space.", ["Emily Blunt", "John David Washington"], "Hans Zimmer", 4.5,year, now, now),
-        Movie(str(uuid4()), "Rhythm of the Heart", "A touching story of love and music.", ["Zendaya", "Oscar Isaac"], "Ludwig Göransson", 2.1, year, now, now),
-        Movie(str(uuid4()), "Quantum Thief", "A hacker joins a high-stakes digital heist.", ["Rami Malek", "Anya Taylor-Joy"], "Trent Reznor", 5, year, now, now),
-        Movie(str(uuid4()), "Crimson Skies", "Pilots fight for freedom in an alternate 1930s.", ["Tom Hardy", "Margot Robbie"], "Junkie XL", 4.5, year, now, now),
-        Movie(str(uuid4()), "Echoes in the Fog", "Detectives unravel secrets in a misty town.", ["Benedict Cumberbatch", "Jessica Chastain"], "Max Richter", 2.1, year, now, now),
-        Movie(str(uuid4()), "Echoes in the Fog", "Detectives unravel secrets in a misty town.", ["Benedict Cumberbatch", "Jessica Chastain"], "Max Richter", 2.1, year, now, now),
-]
-
-
 @app.get("/")
 async def home():
     return {"message": "Welcome to the Movies API!"}
 
+db_inject = Annotated[Session, Depends(get_db)]
 
 @app.get("/movies", status_code=200) 
-async def get_movies(offset: int = 0, limit: int = 10):
-    return movies_db[offset: limit]
+async def get_movies(db: db_inject):
+    obj =  db.query(MovieRating).all()
+    return obj 
 
 @app.get("/movies/{movie_id}", status_code=200)
-async def get_single_movie(movie_id):
-    for movie in movies_db:
-        if str(movie.id) == movie_id:
-            return movie
-    raise HTTPException(status_code=400, detail="Movie not found! Check ID and try again")
+async def get_single_movie(movie_id: int,
+                            db : db_inject):
 
-@app.get("/movies/{rating}", status_code=200)
-def check(rating: float = Path( gt=0, le=5, description="enter the rating to fetch movies") ):
-    tmp_rated_movies = []
-    for i in range(len(movies_db)):
-        if rating == movies_db[i].rating:
-            tmp_rated_movies.append(movies_db[i])
-    return  {"status": "success", "data": tmp_rated_movies}
-    raise HTTPException(status_code=400, item='query params is either invalid or item unavailable')
-
-
-@app.get("/movies/", status_code=200)
-def check(rating: float = Query( gt=0, le=5, description="enter the rating to fetch movies") ):
-    tmp_rated_movies = []
-    for i in range(len(movies_db)):
-        if rating == movies_db[i].rating:
-            tmp_rated_movies.append(movies_db[i])
-    return  {"status": "success", "data": tmp_rated_movies}
-    raise httpException(status_code=401, item='url param is either invalid or item unavailable')
+    req_obj = db.query(MovieRating).filter(MovieRating.id == movie_id).first()
+    if not req_obj: 
+        raise HTTPException(status_code=400, detail="Movie not found! Check ID and try again")
+    return req_obj
 
 @app.post("/create-movie", status_code=201)
-async def create_movie(movie_req: MovieRequest ):
-    if movie_req:
-        return movies_db.append(Movie(**movie_req.model_dump()))
-    raise HTTPException(status_code=400, detail=f"Error creating movie: {str(e)}")
+async def create_movie(movie_req: MovieRatingRequest, 
+                       db: db_inject ):
+    req_obj = MovieRating(**movie_req.dict())
+    if not req_obj:
+        raise HTTPException(status_code=400, detail=f"Something went wrong while creating the review")
+    db.add(req_obj)
+    db.commit()
+    db.refresh(req_obj) 
 
-@app.put('/update-movie', status_code=200)
-async def update_movie(movie: MovieRequest):
-    for i in range(len(movies_db)):
-        if str(movie.id) == movies_db[i].id:
-            movies_db[i] = movie 
-            return {
-                "status": "success",
-                "message": f"updated movie data successfully!",
-                "data": movies_db
-            }
-    raise HTTPException(status_code=400, detail="Item not found! Check ID and try again")  
-
+@app.put('/update-movie/{movie_id}', status_code=200)
+async def update_movie(movie_id: int,
+                       movie_req: MovieRatingRequest,
+                       db: db_inject):
+    req_obj = db.query(MovieRating).filter(MovieRating.id == movie_id).first()
+    if not req_obj:
+        raise HTTPException(status_code=400, detail="Item not found! Check ID and try again")  
+    
+    req_obj.name = movie_req.name  
+    req_obj.description = movie_req.description  
+    req_obj.cast = movie_req.cast  
+    req_obj.music_director = movie_req.music_director  
+    req_obj.rating = movie_req.rating  
+    req_obj.release_year = movie_req.release_year  
+    req_obj.created_at = movie_req.created_at  
+    req_obj.updated_at = movie_req.updated_at  
+    
+    db.add(req_obj)
+    db.commit()
     
 @app.delete('/delete-movie/{movie_id}', status_code=204)
-async def delete_movie(movie_id):
-    for i in range(len(movies_db)):
-        if movie_id in movies_db[i].id:
-            # movies_db.remove(movie_id)
-            movies_db.remove(movies_db[i])
-            return {
-                "status": "success",
-                "message": f"deletion successfully!",
-                "data": movies_db
-            }
-    raise HTTPException(status_code=401, detail="invalid url parameter or item unavailable")
+async def delete_movie(movie_id: int,
+                       db: db_inject):
+    req_obj = db.query(MovieRating).filter(movie_id == MovieRating.id).first()
+    if not req_obj:
+        raise HTTPException(status_code=500,detail="Could not delete the specified rating" ) 
+    
+    db.query(MovieRating).filter(movie_id == MovieRating.id).delete()
+    db.commit()
+
 
 @app.delete("/delete-all", status_code=200)
-async def delete_all_movies(user: str = "guest"):
-    if user == "admin":
-        movies_db.clear() 
-        return {
-            "status": "success", 
-            "message": "in memory db cleared successfully!",
-            "data": movies_db
-        }
-    return HTTPException(status_code=403, detail="you are not alloe to perform this action")
+async def delete_all_movies():
+    pass 
+    
+
+
 if __name__ == "__main__":
     uvicorn.run(
         "__main__:app", 
