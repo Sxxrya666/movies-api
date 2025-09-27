@@ -4,8 +4,6 @@ from contextlib import asynccontextmanager
 from routers import auth, movie_rating
 from db.models import create_tables 
 
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print('inside lifespan func')

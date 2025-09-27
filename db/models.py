@@ -1,5 +1,5 @@
 from sqlalchemy.orm import DeclarativeBase, mapped_column
-from db.db import engine
+from .db import engine
 from sqlalchemy import BigInteger, Column, Float, String, DateTime, ForeignKey
 from sqlalchemy.dialects.mysql import ENUM
 
@@ -28,6 +28,7 @@ class Users(Base):
     last_name =  Column(String(200), default="User") 
     email = Column(String(200), unique=True, index=True) 
     hashed_password= Column(String(200)) 
+    phone_number = Column(String(20), index=True, unique=True)
     role = Column(
         ENUM("Admin", "Guest", "Moderator"),
         index=True
