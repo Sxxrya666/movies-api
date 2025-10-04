@@ -904,7 +904,6 @@ DONT USE JOSE[CRYPTOGRAPHY] lib. use the `pyjwt lib for jwt (best and similar)
 
 ## 📥 Input Code
 ```python
-code
 ```
 
 ## 📤 Error Output
@@ -916,7 +915,7 @@ sqlalchemy.exc.ProgrammingError: (mysql.connector.errors.ProgrammingError) 1045 
 
 ## ✅ Solution
 ```diff
-
+STOP USING WSL MYSQL INSTANCE AND RUNNING SERVER FROM PWSH :facepalm:
 ```
 
 ## 📝 Analysis
